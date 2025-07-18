@@ -1,0 +1,332 @@
+@{
+    ViewData["Title"] = "Customer Details";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-person"></i> Customer Details</h2>
+    <div>
+        <a asp-action="Edit" asp-route-id="@ViewBag.CustomerId" class="btn btn-success">
+            <i class="bi bi-pencil"></i> Edit Customer
+        </a>
+        <a asp-action="Index" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Back to Customers
+        </a>
+    </div>
+</div>
+
+<div id="loadingSpinner" class="text-center">
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading customer...</span>
+    </div>
+    <p class="mt-2">Loading customer details...</p>
+</div>
+
+<div id="customerDetails" class="d-none">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-person"></i> <span id="customerName">Customer Information</span>
+                        <span id="statusBadge" class="badge ms-2">Active</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Customer ID</label>
+                                <div class="fw-bold" id="customerId">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Full Name</label>
+                                <div class="fw-bold" id="fullName">-</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Email Address</label>
+                                <div id="customerEmail">
+                                    <a href="#" class="text-decoration-none" id="emailLink">-</a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Phone Number</label>
+                                <div id="customerPhone">
+                                    <a href="#" class="text-decoration-none" id="phoneLink">-</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Address</label>
+                        <div id="customerAddress" class="border rounded p-2 bg-light">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-gear"></i> Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a asp-action="Edit" asp-route-id="@ViewBag.CustomerId" class="btn btn-success">
+                            <i class="bi bi-pencil"></i> Edit Customer
+                        </a>
+                        <button id="deleteBtn" class="btn btn-outline-danger">
+                            <i class="bi bi-trash"></i> Delete Customer
+                        </button>
+                        <button id="toggleStatusBtn" class="btn btn-outline-warning">
+                            <i class="bi bi-toggle-off"></i> <span id="toggleText">Deactivate</span>
+                        </button>
+                        <a asp-action="Create" class="btn btn-outline-success">
+                            <i class="bi bi-plus-circle"></i> Add New Customer
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-clock-history"></i> Customer History
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted">Created:</small>
+                        <div id="createdAt" class="fw-bold">-</div>
+                    </div>
+                    <div class="mb-3">
+                        <small class="text-muted">Last Updated:</small>
+                        <div id="updatedAt" class="fw-bold">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-lightbulb"></i> Quick Actions
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-outline-primary btn-sm" onclick="copyCustomerInfo()">
+                            <i class="bi bi-clipboard"></i> Copy Customer Info
+                        </button>
+                        <button class="btn btn-outline-info btn-sm" id="emailCustomerBtn">
+                            <i class="bi bi-envelope"></i> Send Email
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="errorState" class="text-center py-5 d-none">
+    <i class="bi bi-exclamation-triangle display-1 text-danger"></i>
+    <h4 class="text-danger">Customer Not Found</h4>
+    <p class="text-muted">The customer you're looking for doesn't exist or has been deleted.</p>
+    <a asp-action="Index" class="btn btn-success">
+        <i class="bi bi-arrow-left"></i> Back to Customers
+    </a>
+</div>
+
+@section Scripts {
+    <script>
+        let currentCustomer = {};
+
+        $(document).ready(function() {
+            loadCustomer();
+        });
+
+        function loadCustomer() {
+            const customerId = @ViewBag.CustomerId;
+
+            $.get(`/api/customers/${customerId}`)
+                .done(function(response) {
+                    if (response.success) {
+                        currentCustomer = response.data;
+                        displayCustomer(currentCustomer);
+                        setupEventHandlers();
+
+                        $('#loadingSpinner').addClass('d-none');
+                        $('#customerDetails').removeClass('d-none');
+                    } else {
+                        showErrorState();
+                    }
+                })
+                .fail(function() {
+                    showErrorState();
+                });
+        }
+
+        function showErrorState() {
+            $('#loadingSpinner').addClass('d-none');
+            $('#errorState').removeClass('d-none');
+        }
+
+        function displayCustomer(customer) {
+            $('#customerName').text(customer.firstName + ' ' + customer.lastName);
+            $('#customerId').text(customer.id);
+            $('#fullName').text(customer.firstName + ' ' + customer.lastName);
+
+            // Email
+            if (customer.email) {
+                $('#emailLink').attr('href', `mailto:${customer.email}`).text(customer.email);
+            } else {
+                $('#customerEmail').text('-');
+            }
+
+            // Phone
+            if (customer.phoneNumber) {
+                $('#phoneLink').attr('href', `tel:${customer.phoneNumber}`).text(customer.phoneNumber);
+            } else {
+                $('#customerPhone').text('-');
+            }
+
+            // Address
+            let address = '';
+            if (customer.address) address += customer.address;
+            if (customer.city) address += (address ? ', ' : '') + customer.city;
+            if (customer.country) address += (address ? ', ' : '') + customer.country;
+            $('#customerAddress').text(address || 'No address provided');
+
+            // Status
+            const statusBadge = $('#statusBadge');
+            if (customer.isActive) {
+                statusBadge.removeClass('bg-danger').addClass('bg-success').text('Active');
+                $('#toggleText').text('Deactivate');
+                $('#toggleStatusBtn i').removeClass('bi-toggle-on').addClass('bi-toggle-off');
+            } else {
+                statusBadge.removeClass('bg-success').addClass('bg-danger').text('Inactive');
+                $('#toggleText').text('Activate');
+                $('#toggleStatusBtn i').removeClass('bi-toggle-off').addClass('bi-toggle-on');
+            }
+
+            // Dates
+            if (customer.createdAt) {
+                $('#createdAt').text(new Date(customer.createdAt).toLocaleString());
+            }
+            if (customer.updatedAt) {
+                $('#updatedAt').text(new Date(customer.updatedAt).toLocaleString());
+            }
+        }
+
+        function setupEventHandlers() {
+            $('#deleteBtn').on('click', function() {
+                deleteCustomer();
+            });
+
+            $('#toggleStatusBtn').on('click', function() {
+                toggleCustomerStatus();
+            });
+
+            $('#emailCustomerBtn').on('click', function() {
+                if (currentCustomer.email) {
+                    window.open(`mailto:${currentCustomer.email}`, '_blank');
+                }
+            });
+        }
+
+        function deleteCustomer() {
+            if (confirm(`Are you sure you want to delete "${currentCustomer.firstName} ${currentCustomer.lastName}"? This action cannot be undone.`)) {
+                $.ajax({
+                    url: `/api/customers/${currentCustomer.id}`,
+                    method: 'DELETE',
+                    success: function(response) {
+                        if (response.success) {
+                            showSuccess('Customer deleted successfully');
+                            setTimeout(function() {
+                                window.location.href = '/CustomersWeb';
+                            }, 1500);
+                        } else {
+                            showError('Failed to delete customer: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        showError('Failed to delete customer');
+                    }
+                });
+            }
+        }
+
+        function toggleCustomerStatus() {
+            const newStatus = !currentCustomer.isActive;
+            const action = newStatus ? 'activate' : 'deactivate';
+
+            if (confirm(`Are you sure you want to ${action} "${currentCustomer.firstName} ${currentCustomer.lastName}"?`)) {
+                const updatedCustomer = { ...currentCustomer };
+                updatedCustomer.isActive = newStatus;
+
+                $.ajax({
+                    url: `/api/customers/${currentCustomer.id}`,
+                    method: 'PUT',
+                    contentType: 'application/json',
+                    data: JSON.stringify(updatedCustomer),
+                    success: function(response) {
+                        if (response.success) {
+                            currentCustomer = response.data;
+                            displayCustomer(currentCustomer);
+                            showSuccess(`Customer ${action}d successfully`);
+                        } else {
+                            showError(`Failed to ${action} customer: ` + response.message);
+                        }
+                    },
+                    error: function() {
+                        showError(`Failed to ${action} customer`);
+                    }
+                });
+            }
+        }
+
+        function copyCustomerInfo() {
+            const customerInfo = `Customer: ${currentCustomer.firstName} ${currentCustomer.lastName}\nID: ${currentCustomer.id}\nEmail: ${currentCustomer.email}\nPhone: ${currentCustomer.phoneNumber || 'N/A'}\nStatus: ${currentCustomer.isActive ? 'Active' : 'Inactive'}`;
+
+            navigator.clipboard.writeText(customerInfo).then(function() {
+                showSuccess('Customer information copied to clipboard');
+            }, function() {
+                showError('Failed to copy customer information');
+            });
+        }
+
+        function showSuccess(message) {
+            showAlert(message, 'success');
+        }
+
+        function showError(message) {
+            showAlert(message, 'danger');
+        }
+
+        function showAlert(message, type) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+
+            $('main').prepend(alertHtml);
+            $('html, body').animate({ scrollTop: 0 }, 300);
+
+            setTimeout(function() {
+                $('.alert').alert('close');
+            }, 5000);
+        }
+    </script>
+}

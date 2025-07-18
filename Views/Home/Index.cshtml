@@ -1,0 +1,94 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome to MVC POC</h1>
+    <p class="lead">Just playing around with MVC patterns and learning some new stuff</p>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-6">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-box"></i> Products Management
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Basic product stuff - add, edit, delete, search. Pretty standard CRUD operations.</p>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-check-circle text-success"></i> View all products</li>
+                    <li><i class="bi bi-check-circle text-success"></i> Add new products</li>
+                    <li><i class="bi bi-check-circle text-success"></i> Edit existing products</li>
+                    <li><i class="bi bi-check-circle text-success"></i> Search and filter</li>
+                    <li><i class="bi bi-check-circle text-success"></i> Low stock alerts</li>
+                </ul>
+            </div>
+            <div class="card-footer bg-transparent">
+                <a asp-controller="ProductsWeb" asp-action="Index" class="btn btn-primary">
+                    <i class="bi bi-arrow-right"></i> Manage Products
+                </a>
+                <a href="/api/products" target="_blank" class="btn btn-outline-secondary">
+                    <i class="bi bi-api"></i> API
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card h-100 shadow-sm">
+            <div class="card-header bg-success text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-people"></i> Customer Management
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Customer info management - names, emails, addresses. Has some validation too.</p>
+                <ul class="list-unstyled">
+                    <li><i class="bi bi-check-circle text-success"></i> View all customers</li>
+                    <li><i class="bi bi-check-circle text-success"></i> Add new customers</li>
+                    <li><i class="bi bi-check-circle text-success"></i> Edit customer details</li>
+                    <li><i class="bi bi-check-circle text-success"></i> Email validation</li>
+                    <li><i class="bi bi-check-circle text-success"></i> Search customers</li>
+                </ul>
+            </div>
+            <div class="card-footer bg-transparent">
+                <a asp-controller="CustomersWeb" asp-action="Index" class="btn btn-success">
+                    <i class="bi bi-arrow-right"></i> Manage Customers
+                </a>
+                <a href="/api/customers" target="_blank" class="btn btn-outline-secondary">
+                    <i class="bi bi-api"></i> API
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-12">
+
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12 text-center">
+        <div class="alert alert-light border">
+            <h6><i class="bi bi-info-circle"></i> API Endpoints Available</h6>
+            <p class="mb-2">
+                <strong>Products:</strong>
+                <code>GET /api/products</code> |
+                <code>POST /api/products</code> |
+                <code>PUT /api/products/{id}</code> |
+                <code>DELETE /api/products/{id}</code>
+            </p>
+            <p class="mb-0">
+                <strong>Customers:</strong>
+                <code>GET /api/customers</code> |
+                <code>POST /api/customers</code> |
+                <code>PUT /api/customers/{id}</code> |
+                <code>DELETE /api/customers/{id}</code>
+            </p>
+        </div>
+    </div>
+</div>

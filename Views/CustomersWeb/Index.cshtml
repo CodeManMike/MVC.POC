@@ -1,0 +1,270 @@
+@{
+    ViewData["Title"] = "Customers Management";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-people"></i> Customers Management</h2>
+    <a asp-action="Create" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> Add New Customer
+    </a>
+</div>
+
+<div class="row mb-3">
+    <div class="col-md-6">
+        <div class="input-group">
+            <span class="input-group-text">
+                <i class="bi bi-search"></i>
+            </span>
+            <input type="text" id="searchInput" class="form-control" placeholder="Search customers...">
+        </div>
+    </div>
+    <div class="col-md-3">
+        <select id="countryFilter" class="form-select">
+            <option value="">All Countries</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <button id="activeOnlyBtn" class="btn btn-info">
+            <i class="bi bi-check-circle"></i> Active Only
+        </button>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-table"></i> Customer Directory
+            <span id="customerCount" class="badge bg-secondary ms-2">0</span>
+        </h5>
+    </div>
+    <div class="card-body">
+        <div id="loadingSpinner" class="text-center d-none">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table id="customersTable" class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Country</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Customers will be loaded here via JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <div id="emptyState" class="text-center py-5 d-none">
+            <i class="bi bi-person-plus display-1 text-muted"></i>
+            <h4 class="text-muted">No customers found</h4>
+            <p class="text-muted">Start by adding your first customer to the directory.</p>
+            <a asp-action="Create" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Add First Customer
+            </a>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let allCustomers = [];
+        let filteredCustomers = [];
+
+        $(document).ready(function() {
+            loadCustomers();
+            setupEventHandlers();
+        });
+
+        function setupEventHandlers() {
+            $('#searchInput').on('input', function() {
+                filterCustomers();
+            });
+
+            $('#countryFilter').on('change', function() {
+                filterCustomers();
+            });
+
+            $('#activeOnlyBtn').on('click', function() {
+                loadActiveCustomers();
+            });
+        }
+
+        function loadCustomers() {
+            showLoading(true);
+
+            $.get('/api/customers')
+                .done(function(response) {
+                    if (response.success) {
+                        allCustomers = response.data;
+                        filteredCustomers = allCustomers;
+                        populateCountries();
+                        displayCustomers();
+                        updateCustomerCount();
+                    } else {
+                        showError('Failed to load customers: ' + response.message);
+                    }
+                })
+                .fail(function() {
+                    showError('Failed to connect to the API');
+                })
+                .always(function() {
+                    showLoading(false);
+                });
+        }
+
+        function loadActiveCustomers() {
+            filteredCustomers = allCustomers.filter(c => c.isActive);
+            displayCustomers();
+            updateCustomerCount();
+            $('#searchInput').val('');
+            $('#countryFilter').val('');
+        }
+
+        function populateCountries() {
+            const countries = [...new Set(allCustomers.map(c => c.country).filter(c => c))];
+            const countrySelect = $('#countryFilter');
+
+            countries.forEach(country => {
+                countrySelect.append(`<option value="${country}">${country}</option>`);
+            });
+        }
+
+        function filterCustomers() {
+            const searchTerm = $('#searchInput').val().toLowerCase();
+            const selectedCountry = $('#countryFilter').val();
+
+            filteredCustomers = allCustomers.filter(customer => {
+                const matchesSearch = customer.firstName.toLowerCase().includes(searchTerm) ||
+                                    customer.lastName.toLowerCase().includes(searchTerm) ||
+                                    customer.email.toLowerCase().includes(searchTerm);
+                const matchesCountry = !selectedCountry || customer.country === selectedCountry;
+
+                return matchesSearch && matchesCountry;
+            });
+
+            displayCustomers();
+            updateCustomerCount();
+        }
+
+        function displayCustomers() {
+            const tbody = $('#customersTable tbody');
+            tbody.empty();
+
+            if (filteredCustomers.length === 0) {
+                $('#customersTable').addClass('d-none');
+                $('#emptyState').removeClass('d-none');
+                return;
+            }
+
+            $('#customersTable').removeClass('d-none');
+            $('#emptyState').addClass('d-none');
+
+            filteredCustomers.forEach(customer => {
+                const row = `
+                    <tr>
+                        <td>${customer.id}</td>
+                        <td>
+                            <strong>${customer.firstName} ${customer.lastName}</strong>
+                            ${customer.address ? `<br><small class="text-muted">${customer.address}, ${customer.city || ''}</small>` : ''}
+                        </td>
+                        <td>
+                            <a href="mailto:${customer.email}" class="text-decoration-none">${customer.email}</a>
+                        </td>
+                        <td>
+                            ${customer.phoneNumber ? `<a href="tel:${customer.phoneNumber}" class="text-decoration-none">${customer.phoneNumber}</a>` : '-'}
+                        </td>
+                        <td>
+                            ${customer.country ? `<span class="badge bg-info">${customer.country}</span>` : '-'}
+                        </td>
+                        <td>
+                            ${customer.isActive ?
+                                '<span class="badge bg-success">Active</span>' :
+                                '<span class="badge bg-danger">Inactive</span>'
+                            }
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="/CustomersWeb/Details/${customer.id}" class="btn btn-outline-info" title="View Details">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="/CustomersWeb/Edit/${customer.id}" class="btn btn-outline-primary" title="Edit">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <button onclick="deleteCustomer(${customer.id})" class="btn btn-outline-danger" title="Delete">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
+
+        function deleteCustomer(customerId) {
+            if (confirm('Are you sure you want to delete this customer?')) {
+                $.ajax({
+                    url: `/api/customers/${customerId}`,
+                    method: 'DELETE',
+                    success: function(response) {
+                        if (response.success) {
+                            showSuccess('Customer deleted successfully');
+                            loadCustomers();
+                        } else {
+                            showError('Failed to delete customer: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        showError('Failed to delete customer');
+                    }
+                });
+            }
+        }
+
+        function updateCustomerCount() {
+            $('#customerCount').text(filteredCustomers.length);
+        }
+
+        function showLoading(show) {
+            if (show) {
+                $('#loadingSpinner').removeClass('d-none');
+                $('#customersTable').addClass('d-none');
+                $('#emptyState').addClass('d-none');
+            } else {
+                $('#loadingSpinner').addClass('d-none');
+            }
+        }
+
+        function showSuccess(message) {
+            showAlert(message, 'success');
+        }
+
+        function showError(message) {
+            showAlert(message, 'danger');
+        }
+
+        function showAlert(message, type) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+
+            $('main').prepend(alertHtml);
+
+            setTimeout(function() {
+                $('.alert').alert('close');
+            }, 5000);
+        }
+    </script>
+}

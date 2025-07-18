@@ -1,0 +1,293 @@
+@{
+    ViewData["Title"] = "Add New Product";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-plus-circle"></i> Add New Product</h2>
+    <a asp-action="Index" class="btn btn-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Products
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-box"></i> Product Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="productForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="name" class="form-label">Product Name *</label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="category" class="form-label">Category *</label>
+                                <input type="text" class="form-control" id="category" name="category" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" placeholder="Enter product description..."></textarea>
+                        <div class="invalid-feedback"></div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="price" class="form-label">Price *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="price" name="price" step="0.01" min="0" required>
+                                    <div class="invalid-feedback"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="stockQuantity" class="form-label">Stock Quantity *</label>
+                                <input type="number" class="form-control" id="stockQuantity" name="stockQuantity" min="0" required>
+                                <div class="invalid-feedback"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="isActive" name="isActive" checked>
+                            <label class="form-check-label" for="isActive">
+                                Product is active
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle"></i> Create Product
+                        </button>
+                        <button type="reset" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-clockwise"></i> Reset Form
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-danger">
+                            <i class="bi bi-x-circle"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-info-circle"></i> Guidelines
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled small">
+                    <li><i class="bi bi-check-circle text-success"></i> Product name should be descriptive</li>
+                    <li><i class="bi bi-check-circle text-success"></i> Price must be greater than $0.01</li>
+                    <li><i class="bi bi-check-circle text-success"></i> Stock quantity cannot be negative</li>
+                    <li><i class="bi bi-check-circle text-success"></i> Category helps organize products</li>
+                    <li><i class="bi bi-check-circle text-success"></i> Description is optional but recommended</li>
+                </ul>
+
+                <hr>
+
+                <h6><i class="bi bi-tags"></i> Common Categories</h6>
+                <div class="d-flex flex-wrap gap-1">
+                    <span class="badge bg-light text-dark category-suggestion" style="cursor: pointer;">Electronics</span>
+                    <span class="badge bg-light text-dark category-suggestion" style="cursor: pointer;">Furniture</span>
+                    <span class="badge bg-light text-dark category-suggestion" style="cursor: pointer;">Appliances</span>
+                    <span class="badge bg-light text-dark category-suggestion" style="cursor: pointer;">Clothing</span>
+                    <span class="badge bg-light text-dark category-suggestion" style="cursor: pointer;">Books</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            setupFormValidation();
+            setupCategorySuggestions();
+        });
+
+        function setupFormValidation() {
+            $('#productForm').on('submit', function(e) {
+                e.preventDefault();
+
+                if (validateForm()) {
+                    createProduct();
+                }
+            });
+        }
+
+        function setupCategorySuggestions() {
+            $('.category-suggestion').on('click', function() {
+                $('#category').val($(this).text());
+            });
+        }
+
+        function validateForm() {
+            let isValid = true;
+            const form = document.getElementById('productForm');
+
+            // Clear previous validation
+            $('.is-invalid').removeClass('is-invalid');
+
+            // Validate required fields
+            const requiredFields = ['name', 'category', 'price', 'stockQuantity'];
+
+            requiredFields.forEach(field => {
+                const element = $(`#${field}`);
+                const value = element.val().trim();
+
+                if (!value) {
+                    showFieldError(element, `${field.charAt(0).toUpperCase() + field.slice(1)} is required`);
+                    isValid = false;
+                }
+            });
+
+            // Validate price
+            const price = parseFloat($('#price').val());
+            if (price <= 0) {
+                showFieldError($('#price'), 'Price must be greater than 0');
+                isValid = false;
+            }
+
+            // Validate stock quantity
+            const stock = parseInt($('#stockQuantity').val());
+            if (stock < 0) {
+                showFieldError($('#stockQuantity'), 'Stock quantity cannot be negative');
+                isValid = false;
+            }
+
+            // Validate name length
+            const name = $('#name').val().trim();
+            if (name.length > 100) {
+                showFieldError($('#name'), 'Product name cannot exceed 100 characters');
+                isValid = false;
+            }
+
+            // Validate description length
+            const description = $('#description').val().trim();
+            if (description.length > 500) {
+                showFieldError($('#description'), 'Description cannot exceed 500 characters');
+                isValid = false;
+            }
+
+            return isValid;
+        }
+
+        function showFieldError(element, message) {
+            element.addClass('is-invalid');
+            element.siblings('.invalid-feedback').text(message);
+        }
+
+        function createProduct() {
+            const productData = {
+                name: $('#name').val().trim(),
+                description: $('#description').val().trim() || null,
+                price: parseFloat($('#price').val()),
+                category: $('#category').val().trim(),
+                stockQuantity: parseInt($('#stockQuantity').val()),
+                isActive: $('#isActive').is(':checked')
+            };
+
+            // Disable form during submission
+            $('#productForm button[type="submit"]').prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> Creating...');
+
+            $.ajax({
+                url: '/api/products',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(productData),
+                success: function(response) {
+                    if (response.success) {
+                        showSuccess('Product created successfully!');
+                        setTimeout(function() {
+                            window.location.href = '/ProductsWeb';
+                        }, 1500);
+                    } else {
+                        showError('Failed to create product: ' + response.message);
+                        handleValidationErrors(response.errors);
+                    }
+                },
+                error: function(xhr) {
+                    let errorMessage = 'Failed to create product';
+
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+
+                        if (xhr.responseJSON.errors && xhr.responseJSON.errors.length > 0) {
+                            handleValidationErrors(xhr.responseJSON.errors);
+                        }
+                    }
+
+                    showError(errorMessage);
+                },
+                complete: function() {
+                    // Re-enable form
+                    $('#productForm button[type="submit"]').prop('disabled', false).html('<i class="bi bi-check-circle"></i> Create Product');
+                }
+            });
+        }
+
+        function handleValidationErrors(errors) {
+            if (!errors || errors.length === 0) return;
+
+            errors.forEach(error => {
+                // Try to match error to specific field
+                const lowerError = error.toLowerCase();
+                if (lowerError.includes('name')) {
+                    showFieldError($('#name'), error);
+                } else if (lowerError.includes('price')) {
+                    showFieldError($('#price'), error);
+                } else if (lowerError.includes('category')) {
+                    showFieldError($('#category'), error);
+                } else if (lowerError.includes('stock')) {
+                    showFieldError($('#stockQuantity'), error);
+                } else if (lowerError.includes('description')) {
+                    showFieldError($('#description'), error);
+                }
+            });
+        }
+
+        function showSuccess(message) {
+            showAlert(message, 'success');
+        }
+
+        function showError(message) {
+            showAlert(message, 'danger');
+        }
+
+        function showAlert(message, type) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+
+            $('main').prepend(alertHtml);
+            $('html, body').animate({ scrollTop: 0 }, 300);
+
+            setTimeout(function() {
+                $('.alert').alert('close');
+            }, 5000);
+        }
+    </script>
+}
